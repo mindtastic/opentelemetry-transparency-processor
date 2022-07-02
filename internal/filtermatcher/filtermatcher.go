@@ -19,8 +19,8 @@ import (
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 
-	"github.com/mindtastic/otel-transparency-processor/internal/filterconfig"
-	"github.com/mindtastic/otel-transparency-processor/internal/filterset"
+	"github.com/mindtastic/opentelemetry-transparency-processor/internal/filterconfig"
+	"github.com/mindtastic/opentelemetry-transparency-processor/internal/filterset"
 )
 
 type instrumentationLibraryMatcher struct {

@@ -1,7 +1,7 @@
 package transparencyprocessor
 
 import (
-	"github.com/mindtastic/opentelemtry-transparency-processor/internal/filterconfig"
+	"github.com/mindtastic/opentelemetry-transparency-processor/internal/filterconfig"
 	"go.opentelemetry.io/collector/config"
 )
 

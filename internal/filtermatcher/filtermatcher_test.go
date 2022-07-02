@@ -22,8 +22,8 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	conventions "go.opentelemetry.io/collector/semconv/v1.6.1"
 
-	"github.com/mindtastic/otel-transparency-processor/internal/filterconfig"
-	"github.com/mindtastic/otel-transparency-processor/internal/filterset"
+	"github.com/mindtastic/opentelemetry-transparency-processor/internal/filterconfig"
+	"github.com/mindtastic/opentelemetry-transparency-processor/internal/filterset"
 )
 
 func createConfig(matchType filterset.MatchType) *filterset.Config {

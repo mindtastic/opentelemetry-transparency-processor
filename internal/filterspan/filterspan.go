@@ -16,14 +16,14 @@ package filterspan // import "github.com/open-telemetry/opentelemetry-collector-
 
 import (
 	"fmt"
-	"github.com/mindtastic/otel-transparency-processor/internal/filterset"
+	"github.com/mindtastic/opentelemetry-transparency-processor/internal/filterset"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	conventions "go.opentelemetry.io/collector/semconv/v1.6.1"
 
-	"github.com/mindtastic/otel-transparency-processor/internal/filterconfig"
-	"github.com/mindtastic/otel-transparency-processor/internal/filtermatcher"
+	"github.com/mindtastic/opentelemetry-transparency-processor/internal/filterconfig"
+	"github.com/mindtastic/opentelemetry-transparency-processor/internal/filtermatcher"
 )
 
 // Matcher is an interface that allows matching a span against a configuration

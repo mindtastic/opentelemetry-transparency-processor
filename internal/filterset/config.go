@@ -17,8 +17,8 @@ package filterset // import "github.com/open-telemetry/opentelemetry-collector-c
 import (
 	"fmt"
 
-	"github.com/mindtastic/otel-transparency-processor/internal/filterset/regexp"
-	"github.com/mindtastic/otel-transparency-processor/internal/filterset/strict"
+	"github.com/mindtastic/opentelemetry-transparency-processor/internal/filterset/regexp"
+	"github.com/mindtastic/opentelemetry-transparency-processor/internal/filterset/strict"
 )
 
 // MatchType describes the type of pattern matching a FilterSet uses to filter strings.

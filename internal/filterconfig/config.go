@@ -17,7 +17,7 @@ package filterconfig // import "github.com/open-telemetry/opentelemetry-collecto
 import (
 	"errors"
 
-	"github.com/mindtastic/otel-transparency-processor/internal/filterset"
+	"github.com/mindtastic/opentelemetry-transparency-processor/internal/filterset"
 )
 
 // MatchConfig has two optional MatchProperties one to define what is processed

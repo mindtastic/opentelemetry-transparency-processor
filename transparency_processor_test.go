@@ -27,7 +27,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	conventions "go.opentelemetry.io/collector/semconv/v1.6.1"
 
-	"github.com/mindtastic/opentelemtry-transparency-processor/internal/filterset"
+	"github.com/mindtastic/opentelemetry-transparency-processor/internal/filterset"
 )
 
 // Common structure for all the Tests

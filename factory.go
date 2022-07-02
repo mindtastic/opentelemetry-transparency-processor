@@ -2,7 +2,7 @@ package transparencyprocessor
 
 import (
 	"context"
-	"github.com/mindtastic/opentelemtry-transparency-processor/internal/filterspan"
+	"github.com/mindtastic/opentelemetry-transparency-processor/internal/filterspan"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config"
 	"go.opentelemetry.io/collector/consumer"
