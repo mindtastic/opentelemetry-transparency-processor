@@ -81,20 +81,21 @@ func sortAttributes(td ptrace.Traces) {
 func TestProcessTraces(t *testing.T) {
 	testCases := []testCase{
 		{
-			skip:               false,
+			skip:               true,
 			name:               "do nothing",
 			serviceName:        "testing",
 			inputAttributes:    map[string]interface{}{},
 			expectedAttributes: map[string]interface{}{},
 		},
 		{
-			skip:               false,
+			skip:               true,
 			name:               "do nothing without host and path",
 			serviceName:        "linkerd-proxy",
 			inputAttributes:    map[string]interface{}{},
 			expectedAttributes: map[string]interface{}{},
 		},
 		{
+			skip:        false,
 			name:        "add tiltAttributes",
 			serviceName: "linkerd-proxy",
 			inputAttributes: map[string]interface{}{

@@ -82,6 +82,14 @@ func (a *transparencyProcessor) processTraces(ctx context.Context, td ptrace.Tra
 					continue
 				}
 
+				// Overwrite "linkerd-proxy" to the actual component name
+				component, ok := span.Attributes().Get("linkerd.io/proxy-deployment")
+				if !ok {
+					continue
+				}
+				p := pcommon.NewValueString(fmt.Sprintf("%s-proxy", component.AsString()))
+				resource.Attributes().Update(conventions.AttributeServiceName, p)
+
 				tHost, ok := span.Attributes().Get(conventions.AttributeHTTPHost)
 				if !ok {
 					tHost, ok = resource.Attributes().Get(conventions.AttributeHTTPHost)
@@ -107,14 +115,6 @@ func (a *transparencyProcessor) processTraces(ctx context.Context, td ptrace.Tra
 				insertAttributes(span, attrLegalBases, attr.legalBases)
 				insertAttributes(span, attrStorages, attr.storages)
 				span.Attributes().InsertString(attrLegimateInterests, fmt.Sprintf("%v", attr.legitametInterests))
-
-				// Overwrite "linkerd-proxy" to the actual component name
-				component, ok := span.Attributes().Get("linkerd.io/proxy-deployment")
-				if !ok {
-					continue
-				}
-				p := pcommon.NewValueString(fmt.Sprintf("%s-proxy", component.AsString()))
-				resource.Attributes().Update(conventions.AttributeServiceName, p)
 			}
 		}
 	}
