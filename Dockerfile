@@ -16,7 +16,7 @@ RUN builder --config builder.yaml
 
 FROM scratch
 
-COPY --from=builder ["/tmp/otelcol-mindtastic/mindtastic-opentelemetry-collector", "/otelcol-mindtastic"]
+COPY --from=builder ["/tmp/otelcol-mindtastic/mindtastic-opentelemetry-collector", "/otelcol"]
 
 # Command to run when starting the container.
-ENTRYPOINT ["/otelcol-mindtastic"]
+ENTRYPOINT ["/otelcol"]
