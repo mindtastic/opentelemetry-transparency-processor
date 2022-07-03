@@ -114,7 +114,7 @@ func (a *transparencyProcessor) processTraces(ctx context.Context, td ptrace.Tra
 					continue
 				}
 				p := pcommon.NewValueString(fmt.Sprintf("%s-proxy", component.AsString()))
-				resource.Attributes().Insert(conventions.AttributeServiceName, p)
+				resource.Attributes().Update(conventions.AttributeServiceName, p)
 			}
 		}
 	}
