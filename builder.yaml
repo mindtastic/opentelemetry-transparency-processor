@@ -16,6 +16,10 @@ receivers:
   - import: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver
     gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver v0.54.0
 
+extensions:
+  - import: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension
+    gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.54.0
+
 processors:
   - import: github.com/mindtastic/opentelemetry-transparency-processor
     gomod: github.com/mindtastic/opentelemetry-transparency-processor main
