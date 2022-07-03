@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strings"
 	"sync"
 	"time"
 )
@@ -141,12 +142,15 @@ func (a *transparencyProcessor) updateAttributes(httpHost, httpPath string) (til
 	if !ok {
 		host = httpHost
 	}
+	if !strings.Contains(httpPath, "tilt/") {
+		httpPath = "tilt/" + httpPath
+	}
 	u := url.URL{
 		Scheme: "http",
 		Host:   host,
-		Path:   path.Clean(fmt.Sprintf("%s/%s", "tilt", httpPath)),
+		Path:   path.Clean(httpPath),
 	}
-	
+
 	res, err := http.Get(u.String())
 	if err != nil || res.StatusCode >= 400 {
 		a.mu.Lock()
