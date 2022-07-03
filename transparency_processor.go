@@ -87,21 +87,13 @@ func (a *transparencyProcessor) processTraces(ctx context.Context, td ptrace.Tra
 					}
 				}
 
-				tPath, ok := span.Attributes().Get("http.path")
-				if !ok {
-					tPath, ok = resource.Attributes().Get("http.path")
-					if !ok {
-						continue
-					}
-				}
-
-				k := attributeKey(tHost.AsString(), tPath.AsString())
+				k := attributeKey(tHost.AsString(), span.Name())
 				a.mu.RLock()
 				attr, ok := a.attributesCache[k]
 				a.mu.RUnlock()
 				if !ok {
 					a.logger.Info("no tiltAttributes found in cache for key", zap.String("key", k))
-					attributes, err := a.updateAttributes(tHost.AsString(), tPath.AsString())
+					attributes, err := a.updateAttributes(tHost.AsString(), span.Name())
 					if err != nil {
 						a.logger.Warn(fmt.Sprintf("error updating tiltAttributes: %v", err))
 					}
