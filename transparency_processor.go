@@ -142,6 +142,9 @@ func (a *transparencyProcessor) updateAttributes(httpHost, httpPath string) (til
 	}
 	res, err := http.Get(u.String())
 	if err != nil || res.StatusCode >= 400 {
+		a.mu.Lock()
+		a.attributesCache[attributeKey(httpHost, httpPath)] = tiltAttributes{lastUpdated: time.Now()}
+		a.mu.Unlock()
 		return tiltAttributes{}, fmt.Errorf("error fetching spec from %q: %v", u.String(), err)
 	}
 	defer res.Body.Close()
