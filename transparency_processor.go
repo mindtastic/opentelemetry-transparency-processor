@@ -44,6 +44,8 @@ type transparencyProcessor struct {
 
 	telemetryLevel configtelemetry.Level
 
+	serviceMap map[string]string
+
 	mu              sync.RWMutex
 	attributesCache map[string]tiltAttributes
 	include         filterspan.Matcher
@@ -51,11 +53,12 @@ type transparencyProcessor struct {
 	//attrProc        *attraction.AttrProc
 }
 
-func newTransparencyProcessor(set component.ProcessorCreateSettings, include, exclude filterspan.Matcher) *transparencyProcessor {
+func newTransparencyProcessor(set component.ProcessorCreateSettings, include, exclude filterspan.Matcher, serviceMap map[string]string) *transparencyProcessor {
 	tp := new(transparencyProcessor)
 	tp.logger = set.Logger
 	tp.attributesCache = make(map[string]tiltAttributes)
 	tp.mu = sync.RWMutex{}
+	tp.serviceMap = serviceMap
 	tp.include = include
 	tp.exclude = exclude
 
@@ -63,7 +66,6 @@ func newTransparencyProcessor(set component.ProcessorCreateSettings, include, ex
 }
 
 func (a *transparencyProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
-
 	rss := td.ResourceSpans()
 	for i := 0; i < rss.Len(); i++ {
 		rs := rss.At(i)
@@ -104,6 +106,14 @@ func (a *transparencyProcessor) processTraces(ctx context.Context, td ptrace.Tra
 				insertAttributes(span, attrLegalBases, attr.legalBases)
 				insertAttributes(span, attrStorages, attr.storages)
 				span.Attributes().InsertString(attrLegimateInterests, fmt.Sprintf("%v", attr.legitametInterests))
+
+				// Overwrite "linkerd-proxy" to the actual component name
+				component, ok := span.Attributes().Get("linkerd.io/proxy-deployment")
+				if !ok {
+					continue
+				}
+				_ = component
+				//resource.Attributes().Insert(conventions.AttributeServiceName, component)
 			}
 		}
 	}
@@ -127,11 +137,16 @@ func attributeKey(httHost, httpPath string) string {
 }
 
 func (a *transparencyProcessor) updateAttributes(httpHost, httpPath string) (tiltAttributes, error) {
+	host, ok := a.serviceMap[httpHost]
+	if !ok {
+		host = httpHost
+	}
 	u := url.URL{
 		Scheme: "http",
-		Host:   httpHost,
+		Host:   host,
 		Path:   path.Clean(fmt.Sprintf("%s/%s", "tilt", httpPath)),
 	}
+	
 	res, err := http.Get(u.String())
 	if err != nil || res.StatusCode >= 400 {
 		a.mu.Lock()
