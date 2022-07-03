@@ -16,10 +16,14 @@ exporters:
     endpoint: localhost:14250
     tls:
       insecure: true
+  otlp/honeycomb:
+    endpoint: api.honeycomb.io:443
+    headers:
+      x-honeycomb-team: < SECRET :) >
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
       processors: [transparency]
-      exporters: [jaeger]
+      exporters: [jaeger, otlp/honeycomb]

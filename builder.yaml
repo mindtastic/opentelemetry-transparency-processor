@@ -24,7 +24,7 @@ processors:
     gomod: go.opentelemetry.io/collector v0.54.0
 
 replaces:
-  - github.com/mindtastic/opentelemetry-transparency-processor => /Users/leonardbecker/git/github.com/mindtastic/opentelemtry-transparency-processor
+  - github.com/mindtastic/opentelemetry-transparency-processor => /build # Set up to be used by Dockerfile
 
 exporters:
   - import: go.opentelemetry.io/collector/exporter/otlpexporter

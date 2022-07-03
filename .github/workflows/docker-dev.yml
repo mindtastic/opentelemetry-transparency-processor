@@ -1,0 +1,41 @@
+name: Build and Push image
+
+on:
+  push:
+    branches:
+      - '*'         # matches every branch that doesn't contain a '/'
+      - '*/*'       # matches every branch containing a single '/'
+      - '**'        # matches every branch
+      - '!master'   # excludes master
+      - '!main'   # excludes master
+
+jobs:
+  # Push image to GitHub Packages.
+  # See also https://docs.docker.com/docker-hub/builds/
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '>= 1.18.0'
+
+      - name: Run vet
+        run: go vet .
+
+      - name: Build image
+        run: docker build . --tag "ghcr.io/${GITHUB_REPOSITORY}:dev-${GITHUB_SHA}"
+
+      - name: Log in to registry
+        # This is where you will update the PAT to GITHUB_TOKEN
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
+
+      - name: Push image
+        run: |
+          docker push ghcr.io/$GITHUB_REPOSITORY:dev-$GITHUB_SHA
