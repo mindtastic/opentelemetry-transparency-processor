@@ -8,10 +8,12 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configtelemetry"
 	"go.opentelemetry.io/collector/consumer"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	conventions "go.opentelemetry.io/collector/semconv/v1.6.1"
 	"go.uber.org/zap"
 	"net/http"
+	"net/url"
 	"path"
 	"sync"
 	"time"
@@ -26,7 +28,7 @@ const (
 	attrStorages          = "tilt.storageDurations"
 )
 
-type attributes struct {
+type tiltAttributes struct {
 	lastUpdated        time.Time
 	categories         []string
 	legalBases         []string
@@ -43,7 +45,7 @@ type transparencyProcessor struct {
 	telemetryLevel configtelemetry.Level
 
 	mu              sync.RWMutex
-	attributesCache map[string]attributes
+	attributesCache map[string]tiltAttributes
 	include         filterspan.Matcher
 	exclude         filterspan.Matcher
 	//attrProc        *attraction.AttrProc
@@ -52,8 +54,8 @@ type transparencyProcessor struct {
 func newTransparencyProcessor(set component.ProcessorCreateSettings, include, exclude filterspan.Matcher) *transparencyProcessor {
 	tp := new(transparencyProcessor)
 	tp.logger = set.Logger
-	tp.attributesCache = make(map[string]attributes)
-
+	tp.attributesCache = make(map[string]tiltAttributes)
+	tp.mu = sync.RWMutex{}
 	tp.include = include
 	tp.exclude = exclude
 
@@ -61,6 +63,7 @@ func newTransparencyProcessor(set component.ProcessorCreateSettings, include, ex
 }
 
 func (a *transparencyProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
+
 	rss := td.ResourceSpans()
 	for i := 0; i < rss.Len(); i++ {
 		rs := rss.At(i)
@@ -73,57 +76,84 @@ func (a *transparencyProcessor) processTraces(ctx context.Context, td ptrace.Tra
 			for k := 0; k < spans.Len(); k++ {
 				span := spans.At(k)
 				if filterspan.SkipSpan(a.include, a.exclude, span, resource, library) {
+					a.logger.Info("skipped span")
 					continue
 				}
 
-				host, ok := span.Attributes().Get(conventions.AttributeHTTPHost)
+				tHost, ok := span.Attributes().Get(conventions.AttributeHTTPHost)
 				if !ok {
-					continue
-				}
-				path, ok := span.Attributes().Get("http.path")
-				if !ok {
-					continue
+					tHost, ok = resource.Attributes().Get(conventions.AttributeHTTPHost)
+					if !ok {
+						continue
+					}
 				}
 
-				k := attributeKey(host.AsString(), path.AsString())
+				tPath, ok := span.Attributes().Get("http.path")
+				if !ok {
+					tPath, ok = resource.Attributes().Get("http.path")
+					if !ok {
+						a.logger.Info("resource does not contain tPath")
+						continue
+					}
+				}
+
+				k := attributeKey(tHost.AsString(), tPath.AsString())
 				a.mu.RLock()
 				attr, ok := a.attributesCache[k]
 				a.mu.RUnlock()
 				if !ok {
-					a.logger.Info("no attributes found in cache for key", zap.String("key", k))
-					if err := a.updateAttributes(host.AsString(), path.AsString()); err != nil {
-						a.logger.Error(fmt.Sprintf("error updating attributes: %v", err))
+					a.logger.Info("no tiltAttributes found in cache for key", zap.String("key", k))
+					attributes, err := a.updateAttributes(tHost.AsString(), tPath.AsString())
+					if err != nil {
+						a.logger.Error(fmt.Sprintf("error updating tiltAttributes: %v", err))
 					}
+					attr = attributes
 				}
 
-				span.Attributes().InsertString(attrCategories, fmt.Sprintf("%v", attr.categories))
-				span.Attributes().InsertString(attrLegalBases, fmt.Sprintf("%v", attr.legalBases))
+				insertAttributes(span, attrCategories, attr.categories)
+				insertAttributes(span, attrLegalBases, attr.legalBases)
+				insertAttributes(span, attrStorages, attr.storages)
 				span.Attributes().InsertString(attrLegimateInterests, fmt.Sprintf("%v", attr.legitametInterests))
-				span.Attributes().InsertString(attrStorages, fmt.Sprintf("%v", attr.storages))
 			}
 		}
 	}
 	return td, nil
 }
 
-func attributeKey(host, path string) string {
-	return fmt.Sprintf("%s/%s", host, path)
+func insertAttributes(span ptrace.Span, key string, values []string) {
+	b := pcommon.NewSlice()
+	b.EnsureCapacity(len(values))
+	for _, c := range values {
+		v := b.AppendEmpty()
+		v.SetStringVal(c)
+	}
+	vs := pcommon.NewValueSlice()
+	b.CopyTo(vs.SliceVal())
+	span.Attributes().Insert(key, vs)
 }
 
-func (a *transparencyProcessor) updateAttributes(httpHost, httpPath string) error {
-	url := path.Clean(fmt.Sprintf("%s/tilt/%s", httpHost, httpPath))
-	res, err := http.Get(url)
+func attributeKey(httHost, httpPath string) string {
+	return path.Clean(fmt.Sprintf("%s/%s", httHost, httpPath))
+}
+
+func (a *transparencyProcessor) updateAttributes(httpHost, httpPath string) (tiltAttributes, error) {
+	u := url.URL{
+		Scheme: "http",
+		Host:   httpHost,
+		Path:   path.Clean(fmt.Sprintf("%s/%s", "tilt", httpPath)),
+	}
+	res, err := http.Get(u.String())
 	if err != nil || res.StatusCode >= 400 {
-		return fmt.Errorf("error fetching spec from %q: %v", url, err)
+		return tiltAttributes{}, fmt.Errorf("error fetching spec from %q: %v", u.String(), err)
 	}
 	defer res.Body.Close()
 	d := json.NewDecoder(res.Body)
 	spec := new(tiltSpec)
 	if err := d.Decode(spec); err != nil {
-		return fmt.Errorf("error decoding spec from %q: %v", url, err)
+		return tiltAttributes{}, fmt.Errorf("error decoding spec from %q: %v", u.String(), err)
 	}
 
-	attributes := attributes{}
+	attributes := tiltAttributes{}
 
 	for _, d := range spec.DataDisclosed {
 		attributes.categories = append(attributes.categories, d.Category)
@@ -143,5 +173,5 @@ func (a *transparencyProcessor) updateAttributes(httpHost, httpPath string) erro
 	a.mu.Lock()
 	a.attributesCache[attributeKey(httpHost, httpPath)] = attributes
 	a.mu.Unlock()
-	return nil
+	return attributes, nil
 }

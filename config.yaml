@@ -1,0 +1,25 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: localhost:4317
+
+processors:
+  batch:
+  transparency:
+    include:
+      match_type: strict
+      services: [testing]
+
+exporters:
+  jaeger:
+    endpoint: localhost:14250
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [transparency]
+      exporters: [jaeger]

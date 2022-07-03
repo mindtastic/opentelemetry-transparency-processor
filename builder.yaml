@@ -1,12 +1,33 @@
-exporters:
-  - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/alibabacloudlogserviceexporter v0.40.0"
-  - import: go.opentelemetry.io/collector/exporter/loggingexporter
-    gomod: go.opentelemetry.io/collector v0.40.0
+dist:
+  name: mindtastic-opentelemetry-collector
+  description: "Custom OpenTelemetry Collector distribution by mindtastic"
+  otelcol_version: "0.54.0"
+  output_path: /tmp/otelcol-mindtastic
+  version: "0.1.0"
+  go: "/usr/local/bin/go" # On MacOS, installed with `brew`.
 
 receivers:
   - import: go.opentelemetry.io/collector/receiver/otlpreceiver
-    gomod: go.opentelemetry.io/collector v0.40.0
+    gomod: go.opentelemetry.io/collector v0.54.0
+  - import: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jaegerreceiver
+    gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/jaegerreceiver v0.54.0
+  - import: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/opencensusreceiver
+    gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/opencensusreceiver v0.54.0
+  - import: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver
+    gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/zipkinreceiver v0.54.0
 
 processors:
+  - import: github.com/mindtastic/opentelemetry-transparency-processor
+    gomod: github.com/mindtastic/opentelemetry-transparency-processor main
+    name: transparencyprocessor
   - import: go.opentelemetry.io/collector/processor/batchprocessor
-    gomod: go.opentelemetry.io/collector v0.40.0
+    gomod: go.opentelemetry.io/collector v0.54.0
+
+replaces:
+  - github.com/mindtastic/opentelemetry-transparency-processor => /Users/leonardbecker/git/github.com/mindtastic/opentelemtry-transparency-processor
+
+exporters:
+  - import: go.opentelemetry.io/collector/exporter/otlpexporter
+    gomod: go.opentelemetry.io/collector v0.54.0
+  - import: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/jaegerexporter
+    gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/jaegerexporter v0.54.0
