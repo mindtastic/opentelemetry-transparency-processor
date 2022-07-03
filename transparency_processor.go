@@ -76,7 +76,6 @@ func (a *transparencyProcessor) processTraces(ctx context.Context, td ptrace.Tra
 			for k := 0; k < spans.Len(); k++ {
 				span := spans.At(k)
 				if filterspan.SkipSpan(a.include, a.exclude, span, resource, library) {
-					a.logger.Info("skipped span")
 					continue
 				}
 
@@ -92,7 +91,6 @@ func (a *transparencyProcessor) processTraces(ctx context.Context, td ptrace.Tra
 				if !ok {
 					tPath, ok = resource.Attributes().Get("http.path")
 					if !ok {
-						a.logger.Info("resource does not contain tPath")
 						continue
 					}
 				}
@@ -105,7 +103,7 @@ func (a *transparencyProcessor) processTraces(ctx context.Context, td ptrace.Tra
 					a.logger.Info("no tiltAttributes found in cache for key", zap.String("key", k))
 					attributes, err := a.updateAttributes(tHost.AsString(), tPath.AsString())
 					if err != nil {
-						a.logger.Error(fmt.Sprintf("error updating tiltAttributes: %v", err))
+						a.logger.Warn(fmt.Sprintf("error updating tiltAttributes: %v", err))
 					}
 					attr = attributes
 				}
