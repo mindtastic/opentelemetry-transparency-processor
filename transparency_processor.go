@@ -83,7 +83,7 @@ func (a *transparencyProcessor) processTraces(ctx context.Context, td ptrace.Tra
 				}
 
 				// Overwrite "linkerd-proxy" to the actual component name
-				component, ok := span.Attributes().Get("linkerd.io/proxy-deployment")
+				component, ok := resource.Attributes().Get("linkerd.io/proxy-deployment")
 				if !ok {
 					continue
 				}
