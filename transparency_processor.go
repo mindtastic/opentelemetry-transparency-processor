@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strings"
 	"sync"
 	"time"
 )
@@ -44,6 +45,8 @@ type transparencyProcessor struct {
 
 	telemetryLevel configtelemetry.Level
 
+	serviceMap map[string]string
+
 	mu              sync.RWMutex
 	attributesCache map[string]tiltAttributes
 	include         filterspan.Matcher
@@ -51,11 +54,12 @@ type transparencyProcessor struct {
 	//attrProc        *attraction.AttrProc
 }
 
-func newTransparencyProcessor(set component.ProcessorCreateSettings, include, exclude filterspan.Matcher) *transparencyProcessor {
+func newTransparencyProcessor(set component.ProcessorCreateSettings, include, exclude filterspan.Matcher, serviceMap map[string]string) *transparencyProcessor {
 	tp := new(transparencyProcessor)
 	tp.logger = set.Logger
 	tp.attributesCache = make(map[string]tiltAttributes)
 	tp.mu = sync.RWMutex{}
+	tp.serviceMap = serviceMap
 	tp.include = include
 	tp.exclude = exclude
 
@@ -63,7 +67,6 @@ func newTransparencyProcessor(set component.ProcessorCreateSettings, include, ex
 }
 
 func (a *transparencyProcessor) processTraces(ctx context.Context, td ptrace.Traces) (ptrace.Traces, error) {
-
 	rss := td.ResourceSpans()
 	for i := 0; i < rss.Len(); i++ {
 		rs := rss.At(i)
@@ -79,6 +82,14 @@ func (a *transparencyProcessor) processTraces(ctx context.Context, td ptrace.Tra
 					continue
 				}
 
+				// Overwrite "linkerd-proxy" to the actual component name
+				component, ok := resource.Attributes().Get("linkerd.io/proxy-deployment")
+				if !ok {
+					continue
+				}
+				p := pcommon.NewValueString(fmt.Sprintf("%s-proxy", component.AsString()))
+				resource.Attributes().Update(conventions.AttributeServiceName, p)
+
 				tHost, ok := span.Attributes().Get(conventions.AttributeHTTPHost)
 				if !ok {
 					tHost, ok = resource.Attributes().Get(conventions.AttributeHTTPHost)
@@ -87,21 +98,13 @@ func (a *transparencyProcessor) processTraces(ctx context.Context, td ptrace.Tra
 					}
 				}
 
-				tPath, ok := span.Attributes().Get("http.path")
-				if !ok {
-					tPath, ok = resource.Attributes().Get("http.path")
-					if !ok {
-						continue
-					}
-				}
-
-				k := attributeKey(tHost.AsString(), tPath.AsString())
+				k := attributeKey(tHost.AsString(), span.Name())
 				a.mu.RLock()
 				attr, ok := a.attributesCache[k]
 				a.mu.RUnlock()
 				if !ok {
 					a.logger.Info("no tiltAttributes found in cache for key", zap.String("key", k))
-					attributes, err := a.updateAttributes(tHost.AsString(), tPath.AsString())
+					attributes, err := a.updateAttributes(tHost.AsString(), span.Name())
 					if err != nil {
 						a.logger.Warn(fmt.Sprintf("error updating tiltAttributes: %v", err))
 					}
@@ -135,11 +138,19 @@ func attributeKey(httHost, httpPath string) string {
 }
 
 func (a *transparencyProcessor) updateAttributes(httpHost, httpPath string) (tiltAttributes, error) {
+	host, ok := a.serviceMap[httpHost]
+	if !ok {
+		host = httpHost
+	}
+	if !strings.Contains(httpPath, "tilt/") {
+		httpPath = "tilt/" + httpPath
+	}
 	u := url.URL{
 		Scheme: "http",
-		Host:   httpHost,
-		Path:   path.Clean(fmt.Sprintf("%s/%s", "tilt", httpPath)),
+		Host:   host,
+		Path:   path.Clean(httpPath),
 	}
+
 	res, err := http.Get(u.String())
 	if err != nil || res.StatusCode >= 400 {
 		a.mu.Lock()

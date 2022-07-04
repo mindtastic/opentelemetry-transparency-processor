@@ -37,7 +37,7 @@ func createTracesProcessor(_ context.Context, set component.ProcessorCreateSetti
 	}
 	return processorhelper.NewTracesProcessor(
 		cfg, nextConsumer,
-		newTransparencyProcessor(set, include, exclude).processTraces,
+		newTransparencyProcessor(set, include, exclude, oCfg.ServiceMap).processTraces,
 		processorhelper.WithCapabilities(processorCapabilities),
 	)
 }
