@@ -24,9 +24,11 @@ var processorCapabilities = consumer.Capabilities{MutatesData: true}
 
 const (
 	attrCategories        = "tilt.categories"
-	attrLegalBases        = "tilt.legalBases"
-	attrLegimateInterests = "tilt.legitameteInterests"
-	attrStorages          = "tilt.storageDurations"
+	attrLegalBases        = "tilt.legal_bases"
+	attrLegimateInterests = "tilt.legitamete_interests"
+	attrStorages          = "tilt.storage_durations"
+	attrPurposes          = "tilt.purposes"
+	attrAutomatedDecision = "tilt.automated_decision_making"
 )
 
 type tiltAttributes struct {
@@ -35,6 +37,8 @@ type tiltAttributes struct {
 	legalBases         []string
 	legitametInterests []bool
 	storages           []string
+	puproses           []string
+	automatedDecision  bool
 }
 
 type transparencyProcessor struct {
@@ -114,6 +118,10 @@ func (a *transparencyProcessor) processTraces(ctx context.Context, td ptrace.Tra
 				insertAttributes(span, attrCategories, attr.categories)
 				insertAttributes(span, attrLegalBases, attr.legalBases)
 				insertAttributes(span, attrStorages, attr.storages)
+				insertAttributes(span, attrPurposes, attr.puproses)
+				if attr.automatedDecision {
+					span.Attributes().InsertBool(attrAutomatedDecision, attr.automatedDecision)
+				}
 				span.Attributes().InsertString(attrLegimateInterests, fmt.Sprintf("%v", attr.legitametInterests))
 			}
 		}
@@ -122,6 +130,9 @@ func (a *transparencyProcessor) processTraces(ctx context.Context, td ptrace.Tra
 }
 
 func insertAttributes(span ptrace.Span, key string, values []string) {
+	if len(values) == 0 {
+		return
+	}
 	b := pcommon.NewSlice()
 	b.EnsureCapacity(len(values))
 	for _, c := range values {
@@ -172,6 +183,9 @@ func (a *transparencyProcessor) updateAttributes(httpHost, httpPath string) (til
 		for _, l := range d.LegalBases {
 			attributes.legalBases = append(attributes.legalBases, l.Reference)
 		}
+		for _, p := range d.Purposes {
+			attributes.puproses = append(attributes.puproses, p.Purpose)
+		}
 		for _, l := range d.LegitimateInterests {
 			attributes.legitametInterests = append(attributes.legitametInterests, l.Exists)
 		}
@@ -180,6 +194,7 @@ func (a *transparencyProcessor) updateAttributes(httpHost, httpPath string) (til
 				attributes.storages = append(attributes.storages, t.TTL)
 			}
 		}
+		attributes.automatedDecision = spec.AutomatedDecisionMaking.InUse
 	}
 
 	a.mu.Lock()
