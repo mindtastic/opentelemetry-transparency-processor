@@ -23,12 +23,12 @@ import (
 var processorCapabilities = consumer.Capabilities{MutatesData: true}
 
 const (
-	attrCategories        = "tilt.categories"
-	attrLegalBases        = "tilt.legal_bases"
-	attrLegimateInterests = "tilt.legitamete_interests"
-	attrStorages          = "tilt.storage_durations"
-	attrPurposes          = "tilt.purposes"
-	attrAutomatedDecision = "tilt.automated_decision_making"
+	attrCategories          = "tilt.categories"
+	attrLegalBases          = "tilt.legal_bases"
+	attrLegitimateInterests = "tilt.legitimate_interests"
+	attrStorages            = "tilt.storage_durations"
+	attrPurposes            = "tilt.purposes"
+	attrAutomatedDecision   = "tilt.automated_decision_making"
 )
 
 type tiltAttributes struct {
@@ -122,7 +122,7 @@ func (a *transparencyProcessor) processTraces(ctx context.Context, td ptrace.Tra
 				if attr.automatedDecision {
 					span.Attributes().InsertBool(attrAutomatedDecision, attr.automatedDecision)
 				}
-				span.Attributes().InsertString(attrLegimateInterests, fmt.Sprintf("%v", attr.legitametInterests))
+				span.Attributes().InsertString(attrLegitimateInterests, fmt.Sprintf("%v", attr.legitametInterests))
 			}
 		}
 	}
