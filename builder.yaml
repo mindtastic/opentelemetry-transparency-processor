@@ -26,12 +26,16 @@ processors:
     name: transparencyprocessor
   - import: go.opentelemetry.io/collector/processor/batchprocessor
     gomod: go.opentelemetry.io/collector v0.54.0
+  - import: github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbytraceprocessor
+    gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbytraceprocessor v0.54.0
 
 replaces:
   - github.com/mindtastic/opentelemetry-transparency-processor => /build # Set up to be used by Dockerfile
 
 exporters:
   - import: go.opentelemetry.io/collector/exporter/otlpexporter
+    gomod: go.opentelemetry.io/collector v0.54.0
+  - import: go.opentelemetry.io/collector/exporter/otlphttpexporter
     gomod: go.opentelemetry.io/collector v0.54.0
   - import: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/jaegerexporter
     gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/jaegerexporter v0.54.0
